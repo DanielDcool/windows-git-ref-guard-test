@@ -9,12 +9,17 @@ from windows_git_ref_guard.core import GitCommandError, guard_repository
 
 class SubprocessGitRunner:
     def git(self, args: list[str]) -> str:
-        completed = subprocess.run(
-            ["git", *args],
-            check=False,
-            capture_output=True,
-            text=True,
-        )
+        try:
+            completed = subprocess.run(
+                ["git", *args],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+        except FileNotFoundError as error:
+            raise GitCommandError(
+                "git executable was not found. Install Git for Windows or add git.exe to PATH."
+            ) from error
         if completed.returncode != 0:
             message = completed.stderr.strip() or completed.stdout.strip()
             raise GitCommandError(message or f"git {' '.join(args)} failed", completed.returncode)

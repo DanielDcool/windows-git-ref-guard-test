@@ -1,7 +1,9 @@
 import io
 import unittest
+from unittest.mock import patch
 
-from windows_git_ref_guard.cli import main
+from windows_git_ref_guard.cli import SubprocessGitRunner, main
+from windows_git_ref_guard.core import GitCommandError
 
 
 class CliTests(unittest.TestCase):
@@ -38,6 +40,13 @@ class CliTests(unittest.TestCase):
 
         self.assertEqual(exit_code, 0)
         self.assertEqual(runner.calls[-1], ("fetch", "--prune", "origin"))
+
+    def test_subprocess_runner_reports_missing_git_executable(self):
+        runner = SubprocessGitRunner()
+
+        with patch("windows_git_ref_guard.cli.subprocess.run", side_effect=FileNotFoundError):
+            with self.assertRaisesRegex(GitCommandError, "git executable was not found"):
+                runner.git(["status"])
 
 
 class FakeGitRunner:
